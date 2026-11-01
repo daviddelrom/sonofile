@@ -1,0 +1,11 @@
+slug: library-locations
+state: shipped
+date: 2026-11-01
+landing: pull-request (squash)
+pull_requests:
+  - {number: 1, merge: 50b8630, what: project skeleton and CI}
+  - {number: 2, merge: fc30527, what: template, location rules, config store, settings service}
+  - {number: 3, merge: c3fb9a1, what: CLI, untouched-music test, docs}
+  - {number: 4, merge: 5c6e17b, what: verification record}
+  - {number: 5, merge: 5d0d4bd, what: CLI review findings}
+constitution: v1.0.0

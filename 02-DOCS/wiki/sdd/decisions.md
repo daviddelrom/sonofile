@@ -17,3 +17,7 @@
 - Control characters in human output are shown as `\xNN` instead of being removed: the user still sees that something odd was in the path.
 - `--json` never prompts. A missing folder in JSON mode needs `--yes`: scripts must not hang on a prompt, and stdout stays empty on failure.
 - Filesystem errors are reported with a fixed prefix and exit code 1; they are not a separate error class.
+
+## 2026-11-01 — landing of library-locations (ship)
+- Options: direct merge, pull request, park or discard. Chose pull request, in three planned PRs plus two for verification and review fixes: `main` is closed to direct work (constitution 9) and the 400-line review budget was exceeded.
+- Archive written to `02-DOCS/wiki/sdd/archive/library-locations/`.
