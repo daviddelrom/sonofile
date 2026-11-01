@@ -1,0 +1,57 @@
+version: 1
+project:
+  root: .
+  stacks: [python]            # from constitution v1.0.0; no code exists yet
+  package_managers: [uv]
+  monorepo: false
+  signals: [constitution]
+sdd:
+  artifact_store: 02-DOCS/wiki/sdd
+  execution_mode: interactive
+  registry_path: .rsc/skill-registry.json
+  review_budget:
+    line_budget: 400
+    file_budget: 12
+  delivery_strategy:
+    default: ask-on-risk
+testing:
+  strict_tdd: true            # constitution principle 5; the runner is added by the bootstrap task
+  runners: []                 # gap: pytest not installed yet
+  commands:
+    apply: []
+    verify:
+      - uv run ruff check .
+      - uv run ruff format --check .
+      - uv run mypy --strict src
+      - uv run pytest --cov --cov-fail-under=80
+phase_rules:
+  proposal: optional-on-ambiguity
+  specify: requires intent or proposal
+  plan: requires spec
+  tasks: requires plan and spec
+  analyze: requires spec plan tasks
+  implement: requires analyze pass, strict_tdd when testing.strict_tdd is true
+  verify: requires spec tasks evidence
+  archive: requires verify record and review/ship outcome
+models:
+  enabled: false
+  provider: anthropic
+  tiers:
+    heavy: claude-opus-4-8
+    balanced: claude-sonnet-4-6
+    light: claude-haiku-4-5-20251001
+  phases:
+    constitution: heavy
+    specify: balanced
+    clarify: balanced
+    plan: heavy
+    tasks: balanced
+    analyze: heavy
+    implement: balanced
+    verify: balanced
+    review: heavy
+    ship: light
+    debug: heavy
+    worktrees: light
+    sdd-init: light
+  overrides: {}
