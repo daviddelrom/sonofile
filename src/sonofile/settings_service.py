@@ -71,5 +71,5 @@ def _build(raw: RawSettings) -> Settings:
         library=raw.library,
         new=raw.new,
         template=raw.template or template.DEFAULT_TEMPLATE,
-        template_is_default=raw.template is None,
+        template_is_default=not raw.template,
     )

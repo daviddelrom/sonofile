@@ -21,6 +21,8 @@ SAMPLE_TAGS: dict[str, str | int] = {
 
 _FIELD = re.compile(r"\{([^{}]*)\}")
 _INVALID_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
+_DRIVE_PREFIX = re.compile(r"^[A-Za-z]:")
+MAX_SEGMENT_BYTES = 255
 
 
 class TemplateError(ValueError):
@@ -30,8 +32,10 @@ class TemplateError(ValueError):
 def validate(template: str) -> None:
     if not template.strip():
         raise TemplateError("La plantilla está vacía.")
-    if template.startswith(("/", "\\")):
+    if template.startswith("/") or _DRIVE_PREFIX.match(template):
         raise TemplateError("La plantilla no puede ser una ruta absoluta.")
+    if "\\" in template:
+        raise TemplateError("La plantilla no puede contener la barra invertida; usa '/'.")
 
     remainder = _FIELD.sub("", template)
     if "{" in remainder or "}" in remainder:
@@ -48,6 +52,8 @@ def validate(template: str) -> None:
             raise TemplateError("La plantilla tiene un segmento vacío.")
         if segment in {".", ".."}:
             raise TemplateError("La plantilla no puede contener segmentos '.' ni '..'.")
+        if len(_FIELD.sub("", segment).encode()) > MAX_SEGMENT_BYTES:
+            raise TemplateError("Un segmento de la plantilla es demasiado largo.")
 
 
 def render(template: str, tags: Mapping[str, str | int | None]) -> str:
@@ -60,4 +66,12 @@ def render(template: str, tags: Mapping[str, str | int | None]) -> str:
             return MISSING
         return _INVALID_CHARS.sub("_", text)
 
-    return _FIELD.sub(replace, template)
+    rendered = _FIELD.sub(replace, template)
+    return "/".join(_fit(segment) for segment in rendered.split("/"))
+
+
+def _fit(segment: str) -> str:
+    encoded = segment.encode()
+    if len(encoded) <= MAX_SEGMENT_BYTES:
+        return segment
+    return encoded[:MAX_SEGMENT_BYTES].decode(errors="ignore")
