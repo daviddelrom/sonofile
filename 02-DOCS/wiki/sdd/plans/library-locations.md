@@ -5,7 +5,7 @@ description: Technical plan for the library-locations spec.
 tags: [sdd, plan]
 timestamp: 2026-11-01T22:30:00Z
 topic: sdd
-status: approved
+status: shipped
 ---
 
 # Plan — library locations and naming template

@@ -5,7 +5,7 @@ description: Configure the music library folder, the "new" downloads folder and 
 tags: [sdd, spec]
 timestamp: 2026-11-01T22:20:00Z
 topic: sdd
-status: approved
+status: shipped
 ---
 
 # Library locations and naming template
@@ -76,3 +76,7 @@ A free-form template brings missing-tag, invalid-character and collision rules t
 ## Next
 
 `plan`. Before the first plan, run `sdd-init` to calibrate the technical runtime (no stack exists yet).
+
+## Shipped
+
+Shipped 2026-11-01 through PRs #1-#5. Archive: [final report](../archive/library-locations/final-report.md).
