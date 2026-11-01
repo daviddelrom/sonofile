@@ -155,3 +155,11 @@ def test_preview_writes_nothing(service: SettingsService, tmp_path: Path) -> Non
 def test_template_saved_by_another_run_is_read(service: SettingsService) -> None:
     config_store.save(service.config_path, RawSettings(template="{Año}/{Título}"))
     assert service.get().template == "{Año}/{Título}"
+
+
+def test_blank_stored_template_counts_as_default(service: SettingsService) -> None:
+    service.config_path.parent.mkdir(parents=True)
+    service.config_path.write_text('template = ""\n')
+    settings = service.get()
+    assert settings.template == DEFAULT_TEMPLATE
+    assert settings.template_is_default is True

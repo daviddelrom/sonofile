@@ -121,3 +121,26 @@ def test_render_validates_first() -> None:
 def test_dot_only_values_cannot_escape_the_library(value: str) -> None:
     tags = {**TAGS, "Artista": value}
     assert render("{Artista}/{Título}", tags) == "Desconocido/One More Time"
+
+
+@pytest.mark.parametrize("text", ["C:\\Music\\{Artista}", "C:/Music/{Artista}", "c:{Artista}"])
+def test_windows_absolute_templates_are_rejected(text: str) -> None:
+    with pytest.raises(TemplateError, match="absoluta"):
+        validate(text)
+
+
+def test_backslash_is_rejected() -> None:
+    with pytest.raises(TemplateError, match="barra invertida"):
+        validate("{Artista}\\{Título}")
+
+
+def test_overlong_literal_segment_is_rejected() -> None:
+    with pytest.raises(TemplateError, match="largo"):
+        validate("x" * 256)
+
+
+def test_overlong_rendered_segment_is_truncated_to_255_bytes() -> None:
+    tags = {**TAGS, "Título": "ñ" * 300}
+    segment = render("{Título}", tags)
+    assert len(segment.encode()) <= 255
+    assert segment.startswith("ñ")
