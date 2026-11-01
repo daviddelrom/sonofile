@@ -47,3 +47,16 @@ Security reviewer: no findings. Correctness reviewer: 4 findings, reproduced.
 | T013 | done | test passes; mutation check: writing a file into the library turns it red |
 | T014 | done | `readme.md` documents every command |
 | T015 | done | ruff, ruff format, mypy --strict, pytest (93 tests, 100 % coverage) all exit 0; CI result on the PR |
+
+## Adversarial review of the CLI (2026-11-01)
+
+Security reviewer: 1 finding. Correctness reviewer: 3 findings. All reproduced.
+
+| # | Finding | Outcome |
+| --- | --- | --- |
+| 1 | OSC 52 and other control characters in a path were printed raw | fixed: shown as `\xNN` in human output; JSON already escapes them |
+| 2 | `OSError` (config path is a directory or sits under a file) printed a traceback | fixed: clean message, exit 1 |
+| 3 | `--json` prompted for confirmation | fixed: with `--json` it never prompts and asks for `--yes` |
+| 4 | the untouched-music test ignored command results | fixed: asserts each command's exit code |
+
+Note: `click.echo` strips some ANSI sequences when output is not a terminal, so the first version of the error-escape test passed without proving anything. It now uses an OSC 52 sequence, which `click` lets through, and was seen red before the fix. 101 tests, 100 % coverage.

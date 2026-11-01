@@ -12,3 +12,8 @@
 - Config path can be overridden with `SONOFILE_CONFIG`; this isolates tests from the real user config and helps scripts.
 - In `--json` mode errors are also JSON, on stderr, so stdout stays empty on failure.
 - The creation confirmation goes to stderr so stdout stays clean for `--json`.
+
+## 2026-11-01 — review findings on the CLI (feature: library-locations, tasks: T011-T013)
+- Control characters in human output are shown as `\xNN` instead of being removed: the user still sees that something odd was in the path.
+- `--json` never prompts. A missing folder in JSON mode needs `--yes`: scripts must not hang on a prompt, and stdout stays empty on failure.
+- Filesystem errors are reported with a fixed prefix and exit code 1; they are not a separate error class.
