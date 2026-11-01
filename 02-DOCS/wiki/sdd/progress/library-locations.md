@@ -37,3 +37,13 @@ Security reviewer: no findings. Correctness reviewer: 4 findings, reproduced.
 | 4 | Stored `template = ""` reported as chosen | fixed: blank counts as default |
 
 75 tests green, 100 % coverage.
+
+## PR 3 (T011-T015)
+
+| Task | Status | Evidence |
+| --- | --- | --- |
+| T011 | done | 16 CLI tests red (module missing), then green |
+| T012 | done | `sonofile --help` lists the commands; `preview` run from a real terminal |
+| T013 | done | test passes; mutation check: writing a file into the library turns it red |
+| T014 | done | `readme.md` documents every command |
+| T015 | done | ruff, ruff format, mypy --strict, pytest (93 tests, 100 % coverage) all exit 0; CI result on the PR |
