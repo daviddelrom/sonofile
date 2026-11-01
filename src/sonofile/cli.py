@@ -9,7 +9,7 @@ from typing import Annotated
 import typer
 
 from sonofile import __version__, config_store
-from sonofile.settings_service import Settings, SettingsService
+from sonofile.settings_service import Settings, SettingsError, SettingsService
 
 app = typer.Typer(help="Gestor automático de biblioteca musical.", no_args_is_help=True)
 config_app = typer.Typer(help="Ubicaciones y plantilla de orden.", no_args_is_help=True)
@@ -25,8 +25,18 @@ def _service() -> SettingsService:
     return SettingsService(config_path=path, cwd=Path.cwd())
 
 
-def _fail(message: str, as_json: bool) -> typer.Exit:
-    text = json.dumps({"error": message}, ensure_ascii=False) if as_json else message
+def _clean(text: str) -> str:
+    """Make control characters visible so a path or template cannot drive the terminal."""
+    return "".join(
+        f"\\x{ord(c):02x}" if ord(c) < 0x20 or 0x7F <= ord(c) <= 0x9F else c for c in text
+    )
+
+
+def _fail(error: Exception, as_json: bool) -> typer.Exit:
+    message = str(error)
+    if isinstance(error, OSError):
+        message = f"No se puede usar la configuración o las carpetas: {message}"
+    text = json.dumps({"error": message}, ensure_ascii=False) if as_json else _clean(message)
     typer.echo(text, err=True)
     return typer.Exit(code=1)
 
@@ -37,9 +47,9 @@ def _show(settings: Settings, as_json: bool) -> None:
         typer.echo(json.dumps(data, ensure_ascii=False))
         return
     default = " (por defecto)" if settings.template_is_default else ""
-    typer.echo(f"Biblioteca: {settings.library or 'sin definir'}")
-    typer.echo(f"Carpeta new: {settings.new or 'sin definir'}")
-    typer.echo(f"Plantilla: {settings.template}{default}")
+    typer.echo(_clean(f"Biblioteca: {settings.library or 'sin definir'}"))
+    typer.echo(_clean(f"Carpeta new: {settings.new or 'sin definir'}"))
+    typer.echo(_clean(f"Plantilla: {settings.template}{default}"))
 
 
 def _version(value: bool) -> None:
@@ -64,18 +74,22 @@ def show(as_json: JsonOption = False) -> None:
     """Muestra las ubicaciones y la plantilla en uso."""
     try:
         _show(_service().get(), as_json)
-    except ValueError as error:
-        raise _fail(str(error), as_json) from error
+    except (ValueError, OSError) as error:
+        raise _fail(error, as_json) from error
 
 
 def _set_locations(library: str | None, new: str | None, yes: bool, as_json: bool) -> None:
     def confirm(path: Path) -> bool:
-        return yes or typer.confirm(f"{path} no existe. ¿Crearla?", err=True)
+        if yes:
+            return True
+        if as_json:
+            raise SettingsError(f"{path} no existe; usa --yes para crearla con --json.")
+        return typer.confirm(_clean(f"{path} no existe. ¿Crearla?"), err=True)
 
     try:
         _show(_service().set_locations(library, new, confirm), as_json)
-    except ValueError as error:
-        raise _fail(str(error), as_json) from error
+    except (ValueError, OSError) as error:
+        raise _fail(error, as_json) from error
 
 
 @config_app.command("set-library")
@@ -95,8 +109,8 @@ def set_template(text: str, as_json: JsonOption = False) -> None:
     """Define la plantilla de orden, por ejemplo '{Artista}/{Album}/{Título}'."""
     try:
         _show(_service().set_template(text), as_json)
-    except ValueError as error:
-        raise _fail(str(error), as_json) from error
+    except (ValueError, OSError) as error:
+        raise _fail(error, as_json) from error
 
 
 @config_app.command("preview")
@@ -104,9 +118,9 @@ def preview(text: str, as_json: JsonOption = False) -> None:
     """Muestra la ruta que tendría una canción de ejemplo, sin guardar nada."""
     try:
         path = _service().preview(text)
-    except ValueError as error:
-        raise _fail(str(error), as_json) from error
+    except (ValueError, OSError) as error:
+        raise _fail(error, as_json) from error
     if as_json:
         typer.echo(json.dumps({"template": text, "path": path}, ensure_ascii=False))
     else:
-        typer.echo(path)
+        typer.echo(_clean(path))

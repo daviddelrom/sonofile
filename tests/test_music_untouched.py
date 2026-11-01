@@ -38,17 +38,17 @@ def test_every_config_command_leaves_music_files_untouched(library: Path) -> Non
     assert before["music"] and before["inbox"]
 
     commands = [
-        ["config", "set-library", str(music)],
-        ["config", "set-new", str(inbox)],
-        ["config", "set-template", "{Género}/{Artista} - {Título}"],
-        ["config", "preview", "{Artista}/{Título}"],
-        ["config", "show"],
-        ["config", "show", "--json"],
-        ["config", "set-library", str(inbox)],
-        ["config", "set-template", "{Nada}"],
+        (["config", "set-library", str(music)], 0),
+        (["config", "set-new", str(inbox)], 0),
+        (["config", "set-template", "{Género}/{Artista} - {Título}"], 0),
+        (["config", "preview", "{Artista}/{Título}"], 0),
+        (["config", "show"], 0),
+        (["config", "show", "--json"], 0),
+        (["config", "set-library", str(inbox)], 1),
+        (["config", "set-template", "{Nada}"], 1),
     ]
-    for command in commands:
-        runner.invoke(app, command)
+    for command, expected_exit in commands:
+        assert runner.invoke(app, command).exit_code == expected_exit, command
 
     assert {"music": snapshot(music), "inbox": snapshot(inbox)} == before
     shown = json.loads(runner.invoke(app, ["config", "show", "--json"]).output)

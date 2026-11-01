@@ -127,3 +127,67 @@ def test_version_flag() -> None:
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
     assert "0.1.0" in result.output
+
+
+def test_config_path_that_is_a_directory_is_a_clean_error(tmp_path: Path) -> None:
+    folder = tmp_path / "adir"
+    folder.mkdir()
+    result = runner.invoke(app, ["config", "show"], env={"SONOFILE_CONFIG": str(folder)})
+    assert result.exit_code == 1
+    assert "Traceback" not in result.stderr
+    assert str(folder) in result.stderr
+
+
+def test_config_path_under_a_file_is_a_clean_error(tmp_path: Path) -> None:
+    blocker = tmp_path / "file"
+    blocker.write_text("x")
+    env = {"SONOFILE_CONFIG": str(blocker / "config.toml")}
+    result = runner.invoke(app, ["config", "set-template", "{Artista}"], env=env)
+    assert result.exit_code == 1
+    assert result.exception is None or isinstance(result.exception, SystemExit)
+    assert "config" in result.stderr.lower()
+
+
+def test_unwritable_creation_is_a_clean_error(tmp_path: Path) -> None:
+    result = runner.invoke(app, ["config", "set-library", "/proc/sonofile-nope", "--yes"])
+    assert result.exit_code == 1
+    assert result.exception is None or isinstance(result.exception, SystemExit)
+
+
+def test_json_mode_never_prompts_and_asks_for_yes(tmp_path: Path) -> None:
+    result = runner.invoke(app, ["config", "set-library", "lib", "--json"], input="y\n")
+    assert result.exit_code == 1
+    assert result.stdout == ""
+    assert "--yes" in json.loads(result.stderr)["error"]
+    assert not (tmp_path / "lib").exists()
+
+
+def test_json_mode_with_yes_creates_the_folder(tmp_path: Path) -> None:
+    result = runner.invoke(app, ["config", "set-library", "lib", "--json", "--yes"])
+    assert result.exit_code == 0
+    assert json.loads(result.stdout)["library"] == str(tmp_path / "lib")
+
+
+def test_control_characters_are_not_echoed_raw(tmp_path: Path) -> None:
+    evil = "lib\x1b]52;c;ZXZpbA==\x07"
+    result = runner.invoke(app, ["config", "set-library", evil, "--yes"])
+    assert result.exit_code == 0
+    assert "\x1b" not in result.output
+    assert "\x07" not in result.output
+    shown = runner.invoke(app, ["config", "show"])
+    assert "\x1b" not in shown.output
+
+
+def test_control_characters_in_errors_are_not_echoed_raw() -> None:
+    result = runner.invoke(app, ["config", "set-template", "{Nada\x1b]52;c;ZXZpbA==\x07}"])
+    assert result.exit_code == 1
+    assert "\x1b" not in result.stderr
+    assert "\x07" not in result.stderr
+
+
+def test_json_output_keeps_control_characters_escaped(tmp_path: Path) -> None:
+    evil = "lib\x1b[2J"
+    runner.invoke(app, ["config", "set-library", evil, "--yes"])
+    raw = runner.invoke(app, ["config", "show", "--json"]).output
+    assert "\x1b" not in raw
+    assert json.loads(raw)["library"].endswith("lib\x1b[2J")
