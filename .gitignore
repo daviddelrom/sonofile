@@ -52,3 +52,10 @@
 .github/prompts/specify.prompt.md
 .github/prompts/tasks.prompt.md
 .github/prompts/verify.prompt.md
+
+# Python
+__pycache__/
+.coverage
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
